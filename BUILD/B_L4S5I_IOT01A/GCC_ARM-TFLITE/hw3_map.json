@@ -1,0 +1,109 @@
+[
+    {
+        "module": "../mbed-os-build2",
+        "size": {
+            ".text": 64912,
+            ".data": 543,
+            ".bss": 14045,
+            ".text-delta": 64912,
+            ".data-delta": 543,
+            ".bss-delta": 14045
+        }
+    },
+    {
+        "module": "BUILD/B_L4S5I_IOT01A",
+        "size": {
+            ".text": 32242,
+            ".data": 309,
+            ".bss": 66857,
+            ".text-delta": 32242,
+            ".data-delta": 309,
+            ".bss-delta": 66857
+        }
+    },
+    {
+        "module": "[fill]",
+        "size": {
+            ".text": 278,
+            ".data": 13,
+            ".bss": 45,
+            ".text-delta": 278,
+            ".data-delta": 13,
+            ".bss-delta": 45
+        }
+    },
+    {
+        "module": "[lib]/c.a",
+        "size": {
+            ".text": 48952,
+            ".data": 2474,
+            ".bss": 89,
+            ".text-delta": 48952,
+            ".data-delta": 2474,
+            ".bss-delta": 89
+        }
+    },
+    {
+        "module": "[lib]/gcc.a",
+        "size": {
+            ".text": 3596,
+            ".data": 0,
+            ".bss": 0,
+            ".text-delta": 3596,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/m.a",
+        "size": {
+            ".text": 2760,
+            ".data": 1,
+            ".bss": 0,
+            ".text-delta": 2760,
+            ".data-delta": 1,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/misc",
+        "size": {
+            ".text": 180,
+            ".data": 4,
+            ".bss": 28,
+            ".text-delta": 180,
+            ".data-delta": 4,
+            ".bss-delta": 28
+        }
+    },
+    {
+        "module": "[lib]/nosys.a",
+        "size": {
+            ".text": 32,
+            ".data": 0,
+            ".bss": 0,
+            ".text-delta": 32,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/stdc++.a",
+        "size": {
+            ".text": 40,
+            ".data": 0,
+            ".bss": 16,
+            ".text-delta": 40,
+            ".data-delta": 0,
+            ".bss-delta": 16
+        }
+    },
+    {
+        "summary": {
+            "static_ram": 84424,
+            "static_ram_delta": 84424,
+            "total_flash": 156336,
+            "total_flash_delta": 156336
+        }
+    }
+]
