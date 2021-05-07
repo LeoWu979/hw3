@@ -23,3 +23,5 @@
 - You can start to tilt the mbed board arbitrarily, the current tilt angle will show on uLCD.<br>
 - If current angle is greater than theshold angle, PC will show the event on screen(my detect period is 500ms).<br>
 - After 10 times of events, PC will send the command to stop this mode and back to RPC loop.<br>
+
+### My result : (I just give one example)<br>
