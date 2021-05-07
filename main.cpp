@@ -39,7 +39,7 @@ RPCFunction gesture(&Gesture_UI, "Gesture_UI");
 RPCFunction tilt(&Tilt_Detection, "Tilt_Detection");
 
 double x, y;
-int flag1 = 0, flag2 = 0, mode = 0, Threshold_Angle = 0, receive_angle = 0; 
+int flag1 = 0, flag2 = 0, mode = 0, Threshold_Angle = 0, receive_angle = 0, tilt_mode = 0, tilt_cnt = 0, init1 = 0, init2 = 1; 
 
 Thread t1,t2,t3;
 
@@ -58,137 +58,39 @@ void messageArrived(MQTT::MessageData& md) {
     char msg[300];
 //if (receive_angle) {
     sprintf(msg, "Message arrived: QoS%d, retained %d, dup %d, packetID %d\r\n", message.qos, message.retained, message.dup, message.id);
-    printf(msg);
-    ThisThread::sleep_for(500ms);
+//    printf(msg);
+//    ThisThread::sleep_for(10ms);
     char payload[300];
-    sprintf(payload, "Your selection :%.*s\r\n", message.payloadlen, (char*)message.payload);
-    printf(payload);
+
 if (receive_angle) {
+    sprintf(payload, "Selected Theshold Angle is :%.*s\r\n", message.payloadlen, (char*)message.payload);
+    printf(payload);	
 	char buf[100] = "/Gesture_UI/run 0";
 	char outbuf[256];
 	RPC::call(buf, outbuf);
 	receive_angle = 0;
 }
+if (tilt_mode) {
+    sprintf(payload, "Over Threshold Angle ! :%.*s\r\n", message.payloadlen, (char*)message.payload);
+    printf(payload);
+	tilt_cnt++;
+	if (tilt_cnt >= 10) {
+		tilt_cnt = 0;
+		printf("Over Threshold Angle more than 10 times ! Back to RPC Loop.\n");
+		char buf[100] = "/Tilt_Detection/run 0";
+		char outbuf[256];
+		RPC::call(buf, outbuf);
+		uLCD.cls();
+	}
+	tilt_mode = 0;
+}
 //	printf("%s\r\n", outbuf);
     ++arrivedcount;
-	
-
 }
-/*
-void publish_message(MQTT::Client<MQTTNetwork, Countdown>* client) {
-    message_num++;
-    MQTT::Message message;
-    char buff[100];
 
-	if (send_angle) {
-		sprintf(buff, "%d", Threshold_Angle);
-		printf("%d",Threshold_Angle);
-		send_angle = 0;
-		receive_angle = 1;
-	}
-    message.qos = MQTT::QOS0;
-    message.retained = false;
-    message.dup = false;
-    message.payload = (void*) buff;
-    message.payloadlen = strlen(buff) + 1;
-    int rc = client->publish(topic, message);
-
-//    printf("rc:  %d\r\n", rc);
-//    printf("Puslish message: %s\r\n", buff);
-}
-*/
 void close_mqtt() {
     closed = true;
 }
-
-/*
-int mqtt_main(void) {
-
-    wifi = WiFiInterface::get_default_instance();
-    if (!wifi) {
-            printf("ERROR: No WiFiInterface found.\r\n");
-            return -1;
-    }
-
-
-    printf("\nConnecting to %s...\r\n", MBED_CONF_APP_WIFI_SSID);
-    int ret = wifi->connect(MBED_CONF_APP_WIFI_SSID, MBED_CONF_APP_WIFI_PASSWORD, NSAPI_SECURITY_WPA_WPA2);
-    if (ret != 0) {
-            printf("\nConnection error: %d\r\n", ret);
-            return -1;
-    }
-
-//    BSP_ACCELERO_Init();
-    NetworkInterface* net = wifi;
-    MQTTNetwork mqttNetwork(net);
-    MQTT::Client<MQTTNetwork, Countdown> client(mqttNetwork);
-
-    //TODO: revise host to your IP
-    const char* host = "172.20.10.2";
-    printf("Connecting to TCP network...\r\n");
-
-    SocketAddress sockAddr;
-    sockAddr.set_ip_address(host);
-    sockAddr.set_port(1883);
-
-    printf("address is %s/%d\r\n", (sockAddr.get_ip_address() ? sockAddr.get_ip_address() : "None"),  (sockAddr.get_port() ? sockAddr.get_port() : 0) ); //check setting
-
-    int rc = mqttNetwork.connect(sockAddr);//(host, 1883);
-    if (rc != 0) {
-            printf("Connection error.");
-            return -1;
-    }
-    printf("Successfully connected!\r\n");
-
-    MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
-    data.MQTTVersion = 3;
-    data.clientID.cstring = "Mbed";
-
-    if ((rc = client.connect(data)) != 0){
-            printf("Fail to connect MQTT\r\n");
-    }
-    if (client.subscribe(topic, MQTT::QOS0, messageArrived) != 0){
-            printf("Fail to subscribe\r\n");
-    }
-
-    mqtt_thread.start(callback(&mqtt_queue, &EventQueue::dispatch_forever));
-//	printf("%d\n", send_angle);
-//	printf("%d",send_angle);
-//	mqtt_queue.call_every(100ms, &publish_message, &client);
-
-
-	mqtt_queue.call_every(100ms, &publish_message, &client);
-    //btn3.rise(&close_mqtt);
-
-
-    int num = 0;
-    while (num != 5) {
-            client.yield(100);
-            ++num;
-    }
-
-    while (1) {
-            if (closed) break;
-            client.yield(500);
-            ThisThread::sleep_for(500ms);
-    }
-
-    printf("Ready to close MQTT Network......\n");
-
-    if ((rc = client.unsubscribe(topic)) != 0) {
-            printf("Failed: rc from unsubscribe was %d\n", rc);
-    }
-    if ((rc = client.disconnect()) != 0) {
-    printf("Failed: rc from disconnect was %d\n", rc);
-    }
-
-    mqttNetwork.disconnect();
-    printf("Successfully closed!\n");
-
-    return 0;
-}
-*/
-
 
 
 // Return the result of the last prediction
@@ -238,35 +140,6 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 	bool should_clear_buffer = false;
 	bool got_data = false;
 
-	// setting of uLCD
-		uLCD.locate(0,0);
-		uLCD.printf("Select angle\n"); //Default Green on black text
-
-
-
-		uLCD.text_width(2);
-		uLCD.text_height(2);
-		uLCD.color(BLUE);
-		uLCD.locate(2,1);
-		uLCD.printf("25");    
-
-		uLCD.text_width(2);
-		uLCD.text_height(2);
-		uLCD.color(BLUE);
-		uLCD.locate(2,3);
-		uLCD.printf("30");  
-
-		uLCD.text_width(2);
-		uLCD.text_height(2);
-		uLCD.color(BLUE);
-		uLCD.locate(2,5);
-		uLCD.printf("35");  
-
-		uLCD.text_width(2);
-		uLCD.text_height(2);
-		uLCD.color(BLUE);
-		uLCD.locate(2,7);
-		uLCD.printf("40");  
 
 
 	// The gesture index of the prediction
@@ -335,7 +208,7 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 
 	error_reporter->Report("Set up successful...\n");
 
-	printf("current_mode : 25\n");
+
 
 	MQTT::Message message;
 	char buff[100];
@@ -345,6 +218,46 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 		if (flag1) myled1 = 1;
 		else
 			myled1 = 0;
+
+		if (flag1 && !init1) {
+			printf("current_mode : 25\n");
+			Threshold_Angle = 25;
+			mode = 0;
+			// setting of uLCD
+			uLCD.cls();
+			uLCD.locate(0,0);
+			uLCD.color(GREEN);
+			uLCD.printf("Select angle\n"); //Default Green on black text
+
+
+
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,1);
+			uLCD.printf("25");    
+/*
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,3);
+			uLCD.printf("30");  
+
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,5);
+			uLCD.printf("35");  
+
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,7);
+			uLCD.printf("40");
+*/  
+			init1 = 1;
+
+		}
 
 		// Attempt to read new data from the accelerometer
 		got_data = ReadAccelerometer(error_reporter, model_input->data.f,
@@ -378,7 +291,7 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 		// Produce an output
 		if ((gesture_index < label_num) && flag1 && (gesture_index == 0) && mode < 3)
 			mode += 1;
-		if ((gesture_index < label_num) && flag1 && (gesture_index == 1) && mode > 0)
+		if ((gesture_index < label_num) && flag1 && (gesture_index == 2) && mode > 0)
 			mode -= 1;
 		switch (mode) {
 			case 0:
@@ -398,29 +311,34 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 				break;
 		}	
 
-
-		if ((gesture_index < label_num) && flag1) {
-			printf("predicr_label : %d\n",gesture_index);
+		if ((gesture_index < label_num) && flag1 && init1) {
+//			printf("predicr_label : %d\n",gesture_index);
 			printf("current_mode : %d\n", Threshold_Angle);
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,1);
+			uLCD.printf("%d", Threshold_Angle); 			
 			error_reporter->Report(config.output_message[gesture_index]);
 		}
 		if (!btn_confirm && flag1) {
 			message_num++;
 
 			sprintf(buff, "%d", Threshold_Angle);
-			printf("%d\n",Threshold_Angle);
+//			printf("%d\n",Threshold_Angle);
     		message.qos = MQTT::QOS0;
     		message.retained = false;
     		message.dup = false;
     		message.payload = (void*) buff;
     		message.payloadlen = strlen(buff) + 1;
     		int rc = client->publish(topic, message);
-    		printf("rc:  %d\r\n", rc);
-    		printf("Puslish message: %s\r\n", buff);
-			ThisThread::sleep_for(100ms);			
-
 			receive_angle = 1;
-			printf("%d\n", receive_angle);
+			ThisThread::sleep_for(500ms);
+//    		printf("rc:  %d\r\n", rc);
+//    		printf("Puslish message: %s\r\n", buff);			
+//			printf("%d\n", receive_angle);
+		}
+
 
 /*
 		if (mode == 0) {
@@ -491,8 +409,8 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 				uLCD.line(20,108,20,127,RED);
 				uLCD.line(102,108,102,127,RED);             
 		}
-	*/
-		}
+*/
+//		ThisThread::sleep_for(10ms);
 
 	}
 
@@ -507,53 +425,90 @@ void client_yield(MQTT::Client<MQTTNetwork, Countdown> *client)
     }
 }
 
-int tilt_main(void)
+int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
 {
 	int16_t acc_current[3] = {0};
-	int stdn[3] = {0,0,1000};
+//	int stdn[3] = {0,0,1000};
 	int dot = 0;
 	float la = 0.0, lb = 0.0, result;
+	MQTT::Message message;
+	char buff[100];
 
 	while (1) {
 
 		if (flag2) {
 			myled2 = 1;
-			myled3 = 1;
+			if (!init2)
+				myled3 = 1;
+			else
+				myled3 = 0;
 		}
 		else {
 			myled2 = 0;
 			myled3 = 0;
 		}
-	ThisThread::sleep_for(100ms);
+		ThisThread::sleep_for(100ms);
 
 		BSP_ACCELERO_AccGetXYZ(accdata);
-		if (!btn_confirm && flag2) {
+		if (!btn_confirm && flag2 && !init2) {
 			for (int i = 0; i < 3; i++)
 				acc_current[i] = accdata[i];
 			printf("Initialization Completed !\n");
 			myled3 = 0;
-			break;
+			init2 = 1;
+			uLCD.cls();
+			uLCD.locate(0,0);
+			uLCD.color(RED);
+			uLCD.printf("Tilt Angle : \n");	
+			ThisThread::sleep_for(100ms);
 		}
 
+		la = 0.0; lb = 0.0; dot = 0;
+		for (int i = 0; i < 3; i++) {
+			dot += acc_current[i] * accdata[i];
+			la += 1.0 * (accdata[i] * accdata[i]);
+			lb += 1.0 * (acc_current[i] * acc_current[i]);
+		}
+	
+		la = sqrt(la);
+		lb = sqrt(lb);
+/*
+		if (accdata[2] > acc_current[2])
+			result = acos(acc_current[2]*1.0 / accdata[2]) * 180 / 3.1415926;
+		else
+			result = acos(accdata[2]*1.0 / acc_current[2]) * 180 / 3.1415926;
+*/
+		result = acos(dot * 1.0 / (la * lb)) * 180 / 3.1415926;
+//		ThisThread::sleep_for(100ms);
+
+		if (flag2 && init2) {
+			uLCD.text_width(2);
+			uLCD.text_height(2);
+			uLCD.color(BLUE);
+			uLCD.locate(2,1);
+			uLCD.printf("%.2f",result);
+		}    
+
+		if (result > float(Threshold_Angle) && flag2 && init2) {
+			message_num++;
+
+			sprintf(buff, "%.2f", result);
+//			printf("%.2f\n",result);
+    		message.qos = MQTT::QOS0;
+    		message.retained = false;
+    		message.dup = false;
+    		message.payload = (void*) buff;
+    		message.payloadlen = strlen(buff) + 1;
+    		int rc = client->publish(topic, message);
+//    		printf("rc:  %d\r\n", rc);
+//    		printf("Puslish message: %s\r\n", buff);
+			tilt_mode = 1;
+//			ThisThread::sleep_for(200ms);			
+		}
+		ThisThread::sleep_for(500ms);
 	}
 	
-	printf("%d %d %d\n", acc_current[0], acc_current[1], acc_current[2]);
-	
-for (int j = 0; j < 10 ; j++) {
-	BSP_ACCELERO_AccGetXYZ(accdata);
-	la = 0.0; lb = 0.0; dot = 0;
-	for (int i = 0; i < 3; i++) {
-		dot += acc_current[i] * accdata[i];
-		la += 1.0 * (accdata[i] * accdata[i]);
-		lb += 1.0 * (acc_current[i] * acc_current[i]);
-	}
-	
-	la = sqrt(la);
-	lb = sqrt(lb);
-	result = acos(dot / (la * lb)) * 180 / 3.1415926;
-	printf("%.2f\n", result);
-	ThisThread::sleep_for(1000ms); 
-}
+
 
 
 
@@ -629,7 +584,7 @@ int main(void) {
 	t3.start(callback(&q3, &EventQueue::dispatch_forever));
 	q3.call(&client_yield, &client);
 	t2.start(callback(&q2, &EventQueue::dispatch_forever));
-	q2.call(&tilt_main);	
+	q2.call(&tilt_main, &client);	
 //    mqtt_thread.start(callback(queue, &EventQueue::dispatch_forever));
 	// receive commands, and send back the responses
 	char buf[256], outbuf[256];
@@ -667,6 +622,7 @@ void Gesture_UI (Arguments *in, Reply *out)   {
 //    char buffer[200], outbuf[256];
 //    char strings[20];
 	flag1 = x;
+	init1 = 0;
 //    int on = y;
 
 }
@@ -682,6 +638,7 @@ void Tilt_Detection (Arguments *in, Reply *out)   {
 //    char buffer[200], outbuf[256];
 //    char strings[20];
 	flag2 = y;
+	init2 = 0;
 //    int on = y;
 
 }
