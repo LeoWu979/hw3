@@ -39,7 +39,7 @@ RPCFunction gesture(&Gesture_UI, "Gesture_UI");
 RPCFunction tilt(&Tilt_Detection, "Tilt_Detection");
 
 double x, y;
-int flag1 = 0, flag2 = 0, mode = 0, send_angle = 0, Threshold_Angle = 0, receive_angle = 0; 
+int flag1 = 0, flag2 = 0, mode = 0, Threshold_Angle = 0, receive_angle = 0; 
 
 Thread t1,t2,t3;
 
@@ -51,7 +51,7 @@ uint8_t tensor_arena[kTensorArenaSize];
 
 //Thread mqtt_thread(osPriorityHigh);
 //EventQueue mqtt_queue;
-EventQueue q1,q3;
+EventQueue q1, q2, q3;
 
 void messageArrived(MQTT::MessageData& md) {
     MQTT::Message &message = md.message;
@@ -515,6 +515,7 @@ int tilt_main(void)
 	float la = 0.0, lb = 0.0, result;
 
 	while (1) {
+
 		if (flag2) {
 			myled2 = 1;
 			myled3 = 1;
@@ -523,7 +524,8 @@ int tilt_main(void)
 			myled2 = 0;
 			myled3 = 0;
 		}
-	
+	ThisThread::sleep_for(100ms);
+
 		BSP_ACCELERO_AccGetXYZ(accdata);
 		if (!btn_confirm && flag2) {
 			for (int i = 0; i < 3; i++)
@@ -532,12 +534,14 @@ int tilt_main(void)
 			myled3 = 0;
 			break;
 		}
+
 	}
 	
 	printf("%d %d %d\n", acc_current[0], acc_current[1], acc_current[2]);
 	
 for (int j = 0; j < 10 ; j++) {
 	BSP_ACCELERO_AccGetXYZ(accdata);
+	la = 0.0; lb = 0.0; dot = 0;
 	for (int i = 0; i < 3; i++) {
 		dot += acc_current[i] * accdata[i];
 		la += 1.0 * (accdata[i] * accdata[i]);
@@ -546,16 +550,16 @@ for (int j = 0; j < 10 ; j++) {
 	
 	la = sqrt(la);
 	lb = sqrt(lb);
-	result = dot / (la * lb) * 180 / 3.1415926;
+	result = acos(dot / (la * lb)) * 180 / 3.1415926;
 	printf("%.2f\n", result);
-	ThisThread::sleep_for(200ms); 
+	ThisThread::sleep_for(1000ms); 
 }
 
 
 
 
 	while (1) {
-		;
+		ThisThread::sleep_for(100ms);
 	}
 
 
@@ -624,7 +628,8 @@ int main(void) {
 	q1.call(&gesture_main, &client);
 	t3.start(callback(&q3, &EventQueue::dispatch_forever));
 	q3.call(&client_yield, &client);
-	t2.start(tilt_main);
+	t2.start(callback(&q2, &EventQueue::dispatch_forever));
+	q2.call(&tilt_main);	
 //    mqtt_thread.start(callback(queue, &EventQueue::dispatch_forever));
 	// receive commands, and send back the responses
 	char buf[256], outbuf[256];
@@ -646,7 +651,7 @@ int main(void) {
 		}
 		//Call the static call method on the RPC class
 		RPC::call(buf, outbuf);
-		printf("%s\r\n", outbuf);
+		printf("%s\r\n", outbuf);	
 	}
 }
 
