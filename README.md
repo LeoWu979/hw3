@@ -25,3 +25,16 @@
 - After 10 times of events, PC will send the command to stop this mode and back to RPC loop.<br>
 
 ### My result : (I just give one example)<br>
+- First you will see the setting scene(connecting to wifi).<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/Screenshot%20from%202021-05-09%2007-53-45.png)
+- Then we start Gesture_UI mode, you will see the current mode both on screen and uLCD.<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/S__40321029.jpg)
+- Press USER_BUTTON to confirm Threshold angle, you will see your selection on screen and uLCD.<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/Screenshot%20from%202021-05-09%2007-54-19.png)
+- Start tilt detection mode and press USER_BUTTON to initialize gravity vector, and you will see "Initialization completed" on screen.<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/Screenshot%20from%202021-05-09%2007-55-11.png)
+- Current tilt angle will show on uLCD.<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/S__40321031.jpg)
+- tilt over threshold angle.<br>
+![image](https://github.com/LeoWu979/hw3/blob/master/S__40321032.jpg)
+![image](https://github.com/LeoWu979/hw3/blob/master/Screenshot%20from%202021-05-09%2007-55-34.png)
