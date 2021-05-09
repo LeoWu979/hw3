@@ -43,23 +43,23 @@ int flag1 = 0, flag2 = 0, mode = 0, Threshold_Angle = 0, receive_angle = 0, tilt
 
 Thread t1,t2,t3;
 
+MQTT::Client<MQTTNetwork, Countdown> *pbclient;
+
+
 // Create an area of memory to use for input, output, and intermediate arrays.
 // The size of this will depend on the model you're using, and may need to be
 // determined by experimentation.
 constexpr int kTensorArenaSize = 60 * 1024;
 uint8_t tensor_arena[kTensorArenaSize];
 
-//Thread mqtt_thread(osPriorityHigh);
-//EventQueue mqtt_queue;
 EventQueue q1, q2, q3;
 
 void messageArrived(MQTT::MessageData& md) {
     MQTT::Message &message = md.message;
     char msg[300];
-//if (receive_angle) {
+
     sprintf(msg, "Message arrived: QoS%d, retained %d, dup %d, packetID %d\r\n", message.qos, message.retained, message.dup, message.id);
-//    printf(msg);
-//    ThisThread::sleep_for(10ms);
+//	printf(msg);
     char payload[300];
 
 if (receive_angle) {
@@ -134,7 +134,7 @@ int PredictGesture(float* output) {
 }
 
 
-int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
+int gesture_main(/*MQTT::Client<MQTTNetwork, Countdown>* client*/) {
 
 	// Whether we should clear the buffer next time we fetch data
 	bool should_clear_buffer = false;
@@ -223,38 +223,19 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 			printf("current_mode : 25\n");
 			Threshold_Angle = 25;
 			mode = 0;
-			// setting of uLCD
+			// setting of uLCD Title
 			uLCD.cls();
 			uLCD.locate(0,0);
 			uLCD.color(GREEN);
-			uLCD.printf("Select angle\n"); //Default Green on black text
+			uLCD.printf("Select angle\n"); 
 
-
-
+			// Setting uLCD of Threshold Angle selection 
 			uLCD.text_width(2);
 			uLCD.text_height(2);
 			uLCD.color(BLUE);
 			uLCD.locate(2,1);
 			uLCD.printf("25");    
-/*
-			uLCD.text_width(2);
-			uLCD.text_height(2);
-			uLCD.color(BLUE);
-			uLCD.locate(2,3);
-			uLCD.printf("30");  
 
-			uLCD.text_width(2);
-			uLCD.text_height(2);
-			uLCD.color(BLUE);
-			uLCD.locate(2,5);
-			uLCD.printf("35");  
-
-			uLCD.text_width(2);
-			uLCD.text_height(2);
-			uLCD.color(BLUE);
-			uLCD.locate(2,7);
-			uLCD.printf("40");
-*/  
 			init1 = 1;
 
 		}
@@ -311,8 +292,8 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 				break;
 		}	
 
+		// gesture predict and mode selection
 		if ((gesture_index < label_num) && flag1 && init1) {
-//			printf("predicr_label : %d\n",gesture_index);
 			printf("current_mode : %d\n", Threshold_Angle);
 			uLCD.text_width(2);
 			uLCD.text_height(2);
@@ -321,114 +302,42 @@ int gesture_main(MQTT::Client<MQTTNetwork, Countdown>* client) {
 			uLCD.printf("%d", Threshold_Angle); 			
 			error_reporter->Report(config.output_message[gesture_index]);
 		}
+
+		// confirm mode
 		if (!btn_confirm && flag1) {
 			message_num++;
 
 			sprintf(buff, "%d", Threshold_Angle);
-//			printf("%d\n",Threshold_Angle);
     		message.qos = MQTT::QOS0;
     		message.retained = false;
     		message.dup = false;
     		message.payload = (void*) buff;
     		message.payloadlen = strlen(buff) + 1;
-    		int rc = client->publish(topic, message);
+    		int rc = pbclient->publish(topic, message);
 			receive_angle = 1;
 			ThisThread::sleep_for(500ms);
 //    		printf("rc:  %d\r\n", rc);
 //    		printf("Puslish message: %s\r\n", buff);			
-//			printf("%d\n", receive_angle);
 		}
-
-
-/*
-		if (mode == 0) {
-				uLCD.line(20,12,102,12,RED);
-				uLCD.line(20,12,20,32,RED);
-				uLCD.line(102,12,102,32,RED);
-				uLCD.line(20,32,102,32,RED);
-				uLCD.line(20,45,102,45,BLACK);
-				uLCD.line(20,45,20,65,BLACK);
-				uLCD.line(102,45,102,65,BLACK);
-				uLCD.line(20,65,102,65,BLACK); 
-				uLCD.line(20,77,102,77,BLACK);
-				uLCD.line(20,77,20,97,BLACK);
-				uLCD.line(102,77,102,97,BLACK);
-				uLCD.line(20,97,102,97,BLACK);
-				uLCD.line(20,108,102,108,BLACK);
-				uLCD.line(20,108,20,127,BLACK);
-				uLCD.line(102,108,102,127,BLACK);                         
-		}
-		if (mode == 1) {
-				uLCD.line(20,12,102,12,BLACK);
-				uLCD.line(20,12,20,32,BLACK);
-				uLCD.line(102,12,102,32,BLACK);
-				uLCD.line(20,32,102,32,BLACK);
-				uLCD.line(20,45,102,45,RED);
-				uLCD.line(20,45,20,65,RED);
-				uLCD.line(102,45,102,65,RED);
-				uLCD.line(20,65,102,65,RED); 
-				uLCD.line(20,77,102,77,BLACK);
-				uLCD.line(20,77,20,97,BLACK);
-				uLCD.line(102,77,102,97,BLACK);
-				uLCD.line(20,97,102,97,BLACK);
-				uLCD.line(20,108,102,108,BLACK);
-				uLCD.line(20,108,20,127,BLACK);
-				uLCD.line(102,108,102,127,BLACK);          
-		}
-		if (mode == 2) {
-				uLCD.line(20,12,102,12,BLACK);
-				uLCD.line(20,12,20,32,BLACK);
-				uLCD.line(102,12,102,32,BLACK);
-				uLCD.line(20,32,102,32,BLACK);
-				uLCD.line(20,45,102,45,BLACK);
-				uLCD.line(20,45,20,65,BLACK);
-				uLCD.line(102,45,102,65,BLACK);
-				uLCD.line(20,65,102,65,BLACK); 
-				uLCD.line(20,77,102,77,RED);
-				uLCD.line(20,77,20,97,RED);
-				uLCD.line(102,77,102,97,RED);
-				uLCD.line(20,97,102,97,RED);
-				uLCD.line(20,108,102,108,BLACK);
-				uLCD.line(20,108,20,127,BLACK);
-				uLCD.line(102,108,102,127,BLACK);              
-		}
-		if (mode == 3) {
-				uLCD.line(20,12,102,12,BLACK);
-				uLCD.line(20,12,20,32,BLACK);
-				uLCD.line(102,12,102,32,BLACK);
-				uLCD.line(20,32,102,32,BLACK);
-				uLCD.line(20,45,102,45,BLACK);
-				uLCD.line(20,45,20,65,BLACK);
-				uLCD.line(102,45,102,65,BLACK);
-				uLCD.line(20,65,102,65,BLACK); 
-				uLCD.line(20,77,102,77,BLACK);
-				uLCD.line(20,77,20,97,BLACK);
-				uLCD.line(102,77,102,97,BLACK);
-				uLCD.line(20,97,102,97,BLACK);
-				uLCD.line(20,108,102,108,RED);
-				uLCD.line(20,108,20,127,RED);
-				uLCD.line(102,108,102,127,RED);             
-		}
-*/
-//		ThisThread::sleep_for(10ms);
-
 	}
-
 }
 
-void client_yield(MQTT::Client<MQTTNetwork, Countdown> *client)
+/*****************************************************************************************/
+
+void client_yield(/*MQTT::Client<MQTTNetwork, Countdown> *client*/)
 {
     while (1) {
         if (closed) break;
-        client->yield(500);
+        pbclient->yield(500);
         ThisThread::sleep_for(500ms);
     }
 }
 
-int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
+/****************************************************************************************/
+
+int tilt_main(/*MQTT::Client<MQTTNetwork, Countdown> *client*/)
 {
 	int16_t acc_current[3] = {0};
-//	int stdn[3] = {0,0,1000};
 	int dot = 0;
 	float la = 0.0, lb = 0.0, result;
 	MQTT::Message message;
@@ -447,7 +356,6 @@ int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
 			myled2 = 0;
 			myled3 = 0;
 		}
-		ThisThread::sleep_for(100ms);
 
 		BSP_ACCELERO_AccGetXYZ(accdata);
 		if (!btn_confirm && flag2 && !init2) {
@@ -462,7 +370,7 @@ int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
 			uLCD.printf("Tilt Angle : \n");	
 			ThisThread::sleep_for(100ms);
 		}
-
+/*
 		la = 0.0; lb = 0.0; dot = 0;
 		for (int i = 0; i < 3; i++) {
 			dot += acc_current[i] * accdata[i];
@@ -472,13 +380,13 @@ int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
 	
 		la = sqrt(la);
 		lb = sqrt(lb);
-/*
+*/
 		if (accdata[2] > acc_current[2])
 			result = acos(acc_current[2]*1.0 / accdata[2]) * 180 / 3.1415926;
 		else
 			result = acos(accdata[2]*1.0 / acc_current[2]) * 180 / 3.1415926;
-*/
-		result = acos(dot * 1.0 / (la * lb)) * 180 / 3.1415926;
+
+//		result = acos(dot * 1.0 / (la * lb)) * 180 / 3.1415926;
 //		ThisThread::sleep_for(100ms);
 
 		if (flag2 && init2) {
@@ -499,30 +407,20 @@ int tilt_main(MQTT::Client<MQTTNetwork, Countdown> *client)
     		message.dup = false;
     		message.payload = (void*) buff;
     		message.payloadlen = strlen(buff) + 1;
-    		int rc = client->publish(topic, message);
+    		int rc = pbclient->publish(topic, message);
 //    		printf("rc:  %d\r\n", rc);
 //    		printf("Puslish message: %s\r\n", buff);
 			tilt_mode = 1;
-//			ThisThread::sleep_for(200ms);			
+			
 		}
 		ThisThread::sleep_for(500ms);
 	}
 	
-
-
-
-
-
 	while (1) {
 		ThisThread::sleep_for(100ms);
 	}
 
-
-
-
-
 }
-
 
 
 
@@ -549,6 +447,7 @@ int main(void) {
 	NetworkInterface* net = wifi;
     MQTTNetwork mqttNetwork(net);
 	MQTT::Client<MQTTNetwork, Countdown> client(mqttNetwork);
+	pbclient = &client;
 
     //TODO: revise host to your IP
     const char* host = "172.20.10.2";
@@ -578,18 +477,13 @@ int main(void) {
             printf("Fail to subscribe\r\n");
     }
 
-	// Start two thread
-	t1.start(callback(&q1, &EventQueue::dispatch_forever));
-	q1.call(&gesture_main, &client);
+	// Start the thread of client_yiled
+
 	t3.start(callback(&q3, &EventQueue::dispatch_forever));
-	q3.call(&client_yield, &client);
-	t2.start(callback(&q2, &EventQueue::dispatch_forever));
-	q2.call(&tilt_main, &client);	
-//    mqtt_thread.start(callback(queue, &EventQueue::dispatch_forever));
+	q3.call(&client_yield);
+
 	// receive commands, and send back the responses
 	char buf[256], outbuf[256];
-
-
 
 	FILE *devin = fdopen(&pc, "r");
 	FILE *devout = fdopen(&pc, "w");
@@ -612,33 +506,29 @@ int main(void) {
 
 // Make sure the method takes in Arguments and Reply objects.
 void Gesture_UI (Arguments *in, Reply *out)   {
-	bool success = true;
 
 		// In this scenario, when using RPC delimit the two arguments with a space.
 	x = in->getArg<double>();
-//    y = in->getArg<double>();
 
-		// Have code here to call another RPC function to wake up specific led or close it.
-//    char buffer[200], outbuf[256];
-//    char strings[20];
 	flag1 = x;
-	init1 = 0;
-//    int on = y;
-
+	if (x) {
+		t1.start(callback(&q1, &EventQueue::dispatch_forever));
+		q1.call(&gesture_main);
+		init1 = 0;	
+	}
+	
 }
 
 void Tilt_Detection (Arguments *in, Reply *out)   {
-	bool success = true;
 
-		// In this scenario, when using RPC delimit the two arguments with a space.
+	// In this scenario, when using RPC delimit the two arguments with a space.
 	y = in->getArg<double>();
-//    y = in->getArg<double>();
 
-		// Have code here to call another RPC function to wake up specific led or close it.
-//    char buffer[200], outbuf[256];
-//    char strings[20];
 	flag2 = y;
-	init2 = 0;
-//    int on = y;
-
+	if (y) {
+		t2.start(callback(&q2, &EventQueue::dispatch_forever));
+		q2.call(&tilt_main);
+		init2 = 0;		
+	}
+	
 }
