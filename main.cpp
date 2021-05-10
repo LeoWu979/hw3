@@ -63,23 +63,25 @@ void messageArrived(MQTT::MessageData& md) {
     char payload[300];
 
 if (receive_angle) {
-    sprintf(payload, "Selected Theshold Angle is :%.*s\r\n", message.payloadlen, (char*)message.payload);
-    printf(payload);	
-	char buf[100] = "/Gesture_UI/run 0";
-	char outbuf[256];
-	RPC::call(buf, outbuf);
+    sprintf(payload, "%.*s\r\n", message.payloadlen, (char*)message.payload);
+	printf(payload);
+//	ThisThread::sleep_for(500ms);
+//	printf("Your selection is : %d", Threshold_Angle);
+//	char buf[100] = "/Gesture_UI/run 0";
+//	char outbuf[256];
+//	RPC::call(buf, outbuf);
 	receive_angle = 0;
 }
 if (tilt_mode) {
-    sprintf(payload, "Over Threshold Angle ! :%.*s\r\n", message.payloadlen, (char*)message.payload);
+    sprintf(payload, "%.*s\r\n", message.payloadlen, (char*)message.payload);
     printf(payload);
-	tilt_cnt++;
+//	tilt_cnt++;
 	if (tilt_cnt >= 10) {
 		tilt_cnt = 0;
 		printf("Over Threshold Angle more than 10 times ! Back to RPC Loop.\n");
-		char buf[100] = "/Tilt_Detection/run 0";
-		char outbuf[256];
-		RPC::call(buf, outbuf);
+//		char buf[100] = "/Tilt_Detection/run 0";
+//		char outbuf[256];
+//		RPC::call(buf, outbuf);
 		uLCD.cls();
 	}
 	tilt_mode = 0;
@@ -306,8 +308,7 @@ int gesture_main(/*MQTT::Client<MQTTNetwork, Countdown>* client*/) {
 		// confirm mode
 		if (!btn_confirm && flag1) {
 			message_num++;
-
-			sprintf(buff, "%d", Threshold_Angle);
+			sprintf(buff, "Threshold_Angle:%d", Threshold_Angle);
     		message.qos = MQTT::QOS0;
     		message.retained = false;
     		message.dup = false;
@@ -398,9 +399,12 @@ int tilt_main(/*MQTT::Client<MQTTNetwork, Countdown> *client*/)
 		}    
 
 		if (result > float(Threshold_Angle) && flag2 && init2) {
+			tilt_cnt++;
 			message_num++;
-
-			sprintf(buff, "%.2f", result);
+			if (tilt_cnt < 10)
+				sprintf(buff, "Tilt_angle:%.2f", result);
+			if (tilt_cnt >= 10)
+				sprintf(buff, "Tilt_Angle:%.2f", result);
 //			printf("%.2f\n",result);
     		message.qos = MQTT::QOS0;
     		message.retained = false;
